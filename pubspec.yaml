@@ -1,0 +1,123 @@
+name: danlens
+description: DanLens - Sistem Informasi GIS Tempat di Medan
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Supabase
+  supabase_flutter: ^2.3.4
+
+  # State Management
+  provider: ^6.1.2
+
+  #Firebase
+  firebase_core: ^3.4.1
+  firebase_messaging: ^15.1.0
+
+  # Map
+  flutter_map: ^6.1.0
+  latlong2: ^0.9.0
+  flutter_map_marker_cluster: ^1.3.1
+
+  # Location
+  geolocator: ^11.0.0
+  permission_handler: ^11.3.1
+
+  # Image
+  cached_network_image: ^3.3.1
+  image_picker: ^1.1.2
+  photo_view: ^0.14.0
+  carousel_slider: ^5.0.0
+
+  # UI
+  shimmer: ^3.0.0
+  flutter_animate: ^4.5.0
+  smooth_page_indicator: ^1.1.0
+  url_launcher: ^6.3.0
+  flutter_svg: ^2.0.10+1
+  badges: ^3.1.2
+
+  # Navigation
+  go_router: ^13.2.0
+
+  # Local Storage / Cache
+  shared_preferences: ^2.2.3
+
+  # Notification
+  flutter_local_notifications: ^17.2.2
+
+  # Export
+  pdf: ^3.11.1
+  excel: ^4.0.2
+  path_provider: ^2.1.3
+  share_plus: ^12.0.2
+
+  # Import
+  file_picker: ^11.0.2
+
+  # Network
+  dio: ^5.4.3+1
+  connectivity_plus: ^6.0.3
+
+  # Utils
+  intl: ^0.19.0
+  uuid: ^4.4.2
+  logger: ^2.4.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.4
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/team/
+
+  fonts:
+    - family: Poppins
+      fonts:
+        - asset: assets/fonts/Poppins-Regular.ttf
+        - asset: assets/fonts/Poppins-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Poppins-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Poppins-Bold.ttf
+          weight: 700
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/logo/logo.png"
+  adaptive_icon_background: "#4a7c59"
+  remove_alpha_ios: true   # tambahkan ini
+
+flutter_native_splash:
+  # Latar belakang hijau penuh
+  color: "#4a7c59"
+  # Logo transparan (putih) yang baru
+  image: assets/logo/logo_splash.png
+
+  # Jangan fullscreen agar gambar tidak tertarik ke atas
+  fullscreen: false
+
+  # Android 12+ splash screen
+  android_12:
+    color: "#4a7c59"
+    image: assets/logo/logo_splash.png
+    # Anda bisa tambahkan versi dark jika mau
+    color_dark: "#2e5240"
+    image_dark: assets/logo/logo_splash.png
+
+  # iOS (jika diperlukan nanti)
+  ios: true
+  ios_content_mode: center
+
+  web: false
