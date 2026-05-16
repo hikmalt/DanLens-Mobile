@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "933811200183",
+    "project_id": "danlens",
+    "storage_bucket": "danlens.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:933811200183:android:0744e407beced2b4d62d32",
+        "android_client_info": {
+          "package_name": "com.example.danlens"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBBlwGa60cXzHuxX_YvZfiH4EPj7cVio2c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,415 @@
+-- ============================================================
+-- FILE: QUERY_LOGIC_EXPLANATION.sql
+-- Tujuan: Menjelaskan logika fitur aplikasi DanLens dalam bentuk query SQL
+--        agar orang awam (non-programmer) mengerti bagaimana data diambil,
+--        difilter, dan ditampilkan.
+-- ============================================================
+-- Aplikasi DanLens adalah Sistem Informasi Geografis (SIG) untuk Kota Medan.
+-- Fitur-fitur utama: menampilkan daftar tempat, pencarian, filter, detail tempat,
+-- rute, poligon kecamatan, dll. Semua data disimpan di database PostgreSQL (Supabase).
+-- 
+-- Berikut adalah query SQL yang mewakili logika fitur-fitur tersebut, 
+-- disertai komentar penjelasan yang mudah dipahami.
+-- ============================================================
+
+-- ============================================================
+-- 1. MENAMPILKAN SEMUA TEMPAT (halaman beranda)
+-- ============================================================
+-- Tujuan: menampilkan daftar tempat yang sudah disetujui, dengan informasi
+-- nama, kategori, kecamatan, rating, dan gambar (media).
+-- 
+-- Query ini menggabungkan tabel tempat dengan kategori dan kecamatan
+-- untuk mendapatkan nama kategori dan kecamatan, bukan hanya ID-nya.
+-- ============================================================
+-- SELECT 
+--     tempat.id, 
+--     tempat.nama_tempat, 
+--     kategori.nama_kategori, 
+--     kecamatan.nama_kecamatan,
+--     tempat.review_rating,
+--     tempat.media
+-- FROM tempat
+-- LEFT JOIN kategori ON tempat.kategori_id = kategori.id
+-- LEFT JOIN kecamatan ON tempat.kecamatan_id = kecamatan.id
+-- ORDER BY tempat.created_at DESC;
+-- 
+-- Penjelasan:
+-- - LEFT JOIN digunakan agar tempat yang tidak punya kategori/kecamatan tetap muncul.
+-- - ORDER BY created_at DESC menampilkan tempat terbaru di atas.
+-- - Hasil query ini akan ditampilkan dalam bentuk list di aplikasi.
+
+-- ============================================================
+-- 2. PENCARIAN TEMPAT (search)
+-- ============================================================
+-- Tujuan: mencari tempat berdasarkan kata kunci yang diketik user.
+-- Kata kunci dicocokkan dengan: nama tempat, jalan, nama kategori, nama kecamatan.
+-- ============================================================
+-- SELECT 
+--     tempat.id,
+--     tempat.nama_tempat,
+--     kategori.nama_kategori,
+--     kecamatan.nama_kecamatan,
+--     tempat.review_rating,
+--     tempat.media,
+--     tempat.latitude,
+--     tempat.longitude
+-- FROM tempat
+-- LEFT JOIN kategori ON tempat.kategori_id = kategori.id
+-- LEFT JOIN kecamatan ON tempat.kecamatan_id = kecamatan.id
+-- WHERE 
+--     tempat.nama_tempat ILIKE '%kata kunci%' 
+--     OR tempat.jalan ILIKE '%kata kunci%'
+--     OR kategori.nama_kategori ILIKE '%kata kunci%'
+--     OR kecamatan.nama_kecamatan ILIKE '%kata kunci%'
+-- ORDER BY tempat.nama_tempat;
+-- 
+-- Penjelasan:
+-- - ILIKE = pencarian tidak peka huruf besar/kecil.
+-- - % adalah wildcard (bisa diikuti karakter apa pun).
+-- - Hasil query dikirim ke aplikasi untuk ditampilkan di dropdown autocomplete.
+
+-- ============================================================
+-- 3. FILTER BERDASARKAN KATEGORI
+-- ============================================================
+-- Tujuan: hanya menampilkan tempat dengan kategori tertentu (misal: Kuliner saja).
+-- User memilih kategori dari daftar (misal: Kuliner, Wisata, Kesehatan, dll).
+-- ============================================================
+-- SELECT 
+--     tempat.id,
+--     tempat.nama_tempat,
+--     kategori.nama_kategori,
+--     kecamatan.nama_kecamatan,
+--     tempat.review_rating
+-- FROM tempat
+-- LEFT JOIN kategori ON tempat.kategori_id = kategori.id
+-- LEFT JOIN kecamatan ON tempat.kecamatan_id = kecamatan.id
+-- WHERE kategori.id = 1  -- 1 = Kuliner
+-- ORDER BY tempat.review_rating DESC;
+-- 
+-- Penjelasan:
+-- - WHERE kategori.id = ... membatasi hanya kategori yang dipilih.
+-- - ORDER BY review_rating DESC menampilkan rating tertinggi lebih dulu (opsional).
+
+-- ============================================================
+-- 4. FILTER JARAK MAKSIMAL (berdasarkan koordinat GPS user)
+-- ============================================================
+-- Tujuan: hanya menampilkan tempat yang berjarak kurang dari nilai tertentu (misal 5 km)
+-- dari posisi user. Aplikasi akan menghitung jarak menggunakan rumus Haversine.
+-- 
+-- Di aplikasi, perhitungan jarak dilakukan di sisi klien (Flutter) setelah data diambil,
+-- tetapi untuk keperluan efisiensi bisa juga menggunakan query SQL seperti di bawah.
+-- ============================================================
+-- CREATE OR REPLACE FUNCTION haversine(lat1 double precision, lon1 double precision, lat2 double precision, lon2 double precision)
+-- RETURNS double precision AS $$
+-- BEGIN
+--     RETURN 6371 * acos( cos(radians(lat1)) * cos(radians(lat2)) * cos(radians(lon2) - radians(lon1)) + sin(radians(lat1)) * sin(radians(lat2)) );
+-- END;
+-- $$ LANGUAGE plpgsql;
+-- 
+-- SELECT 
+--     id, nama_tempat, kategori_id, latitude, longitude,
+--     haversine(3.5896654, 98.6738261, latitude, longitude) AS jarak_km
+-- FROM tempat
+-- WHERE haversine(3.5896654, 98.6738261, latitude, longitude) <= 5
+-- ORDER BY jarak_km;
+-- 
+-- Penjelasan:
+-- - Fungsi haversine() menghitung jarak antara dua titik (lintang, bujur) dalam kilometer.
+-- - Parameter pertama (3.5896654, 98.6738261) adalah posisi user (contoh: Medan).
+-- - WHERE ... <= 5 membatasi hanya tempat dengan jarak ≤ 5 km.
+-- - ORDER BY jarak_km menampilkan yang terdekat lebih dulu.
+
+-- ============================================================
+-- 5. DETAIL TEMPAT (halaman detail)
+-- ============================================================
+-- Tujuan: menampilkan semua informasi suatu tempat, termasuk foto, deskripsi, kontak, dll.
+-- Query ini mengambil satu tempat berdasarkan ID-nya.
+-- ============================================================
+-- SELECT 
+--     tempat.id,
+--     tempat.nama_tempat,
+--     tempat.detail_tempat,
+--     tempat.jalan,
+--     tempat.latitude,
+--     tempat.longitude,
+--     tempat.review_rating,
+--     tempat.kontak,
+--     tempat.media,
+--     kategori.nama_kategori,
+--     kecamatan.nama_kecamatan,
+--     users.name AS penambah_nama
+-- FROM tempat
+-- LEFT JOIN kategori ON tempat.kategori_id = kategori.id
+-- LEFT JOIN kecamatan ON tempat.kecamatan_id = kecamatan.id
+-- LEFT JOIN users ON tempat.user_id = users.id
+-- WHERE tempat.id = 5;   -- contoh ID tempat = 5 (Ucok Durian)
+-- 
+-- Penjelasan:
+-- - Query ini menggabungkan 4 tabel untuk mendapatkan data lengkap.
+-- - Hasilnya dikirim ke halaman detail tempat di aplikasi.
+
+-- ============================================================
+-- 6. MENAMPILKAN POLIGON KECAMATAN (untuk peta)
+-- ============================================================
+-- Tujuan: mengambil data polygon (batas wilayah) untuk digambar di peta.
+-- Setiap kecamatan memiliki kolom 'geojson' yang berisi string GeoJSON Polygon.
+-- ============================================================
+-- SELECT id, nama_kecamatan, geojson
+-- FROM kecamatan
+-- WHERE geojson IS NOT NULL;
+-- 
+-- Penjelasan:
+-- - Aplikasi akan membaca string GeoJSON dan menggambar polygon di peta.
+-- - Kecamatan yang tidak memiliki geojson tidak akan ditampilkan di peta.
+
+-- ============================================================
+-- 7. MENGHITUNG JUMLAH TEMPAT PER KECAMATAN (untuk choropleth)
+-- ============================================================
+-- Tujuan: menghitung berapa banyak tempat yang berada di setiap kecamatan.
+-- Data ini digunakan untuk mewarnai polygon berdasarkan kepadatan tempat.
+-- ============================================================
+-- SELECT 
+--     kecamatan.id,
+--     kecamatan.nama_kecamatan,
+--     COUNT(tempat.id) AS jumlah_tempat
+-- FROM kecamatan
+-- LEFT JOIN tempat ON tempat.kecamatan_id = kecamatan.id
+-- WHERE tempat.latitude IS NOT NULL AND tempat.longitude IS NOT NULL
+-- GROUP BY kecamatan.id, kecamatan.nama_kecamatan
+-- ORDER BY jumlah_tempat DESC;
+-- 
+-- Penjelasan:
+-- - LEFT JOIN memastikan kecamatan tanpa tempat tetap muncul (jumlah = 0).
+-- - GROUP BY mengelompokkan berdasarkan kecamatan.
+-- - Hasil query ini akan menentukan warna polygon (choropleth) di peta.
+
+-- ============================================================
+-- 8. REKOMENDASI TEMPAT TERDEKAT (GPS user)
+-- ============================================================
+-- Tujuan: menampilkan tempat-tempat yang paling dekat dengan lokasi user saat ini.
+-- Aplikasi akan menampilkan daftar seperti "Restoran A (0.3 km)", "Puskesmas B (1.2 km)".
+-- ============================================================
+-- SELECT 
+--     tempat.id,
+--     tempat.nama_tempat,
+--     kategori.nama_kategori,
+--     tempat.review_rating,
+--     haversine(3.5896654, 98.6738261, tempat.latitude, tempat.longitude) AS jarak_km
+-- FROM tempat
+-- LEFT JOIN kategori ON tempat.kategori_id = kategori.id
+-- WHERE tempat.latitude IS NOT NULL AND tempat.longitude IS NOT NULL
+-- ORDER BY jarak_km
+-- LIMIT 20;
+-- 
+-- Penjelasan:
+-- - Fungsi haversine() menghitung jarak dari posisi user (contoh koordinat).
+-- - ORDER BY jarak_km mengurutkan dari terdekat ke terjauh.
+-- - LIMIT 20 hanya menampilkan 20 tempat terdekat.
+
+-- ============================================================
+-- 9. REKOMENDASI RATING TERTINGGI
+-- ============================================================
+-- Tujuan: menampilkan tempat dengan review rating tertinggi (bintang 5 ke bawah).
+-- ============================================================
+-- SELECT 
+--     tempat.id,
+--     tempat.nama_tempat,
+--     kategori.nama_kategori,
+--     tempat.review_rating
+-- FROM tempat
+-- LEFT JOIN kategori ON tempat.kategori_id = kategori.id
+-- WHERE tempat.review_rating IS NOT NULL
+-- ORDER BY tempat.review_rating DESC
+-- LIMIT 20;
+-- 
+-- Penjelasan:
+-- - ORDER BY review_rating DESC menempatkan rating tertinggi di atas.
+-- - LIMIT 20 membatasi jumlah.
+
+-- ============================================================
+-- 10. ADMIN: LIHAT SEMUA TEMPAT (termasuk yang belum punya koordinat)
+-- ============================================================
+-- Tujuan: admin ingin mengelola semua data tempat, termasuk yang mungkin tidak lengkap.
+-- ============================================================
+-- SELECT *
+-- FROM tempat
+-- ORDER BY created_at DESC;
+-- 
+-- Penjelasan:
+-- - Admin memiliki hak akses penuh, sehingga bisa melihat semua baris.
+-- - Tampilan di aplikasi menggunakan tabel dengan tombol edit/hapus.
+
+-- ============================================================
+-- 11. ADMIN: STATISTIK (jumlah tempat per kategori)
+-- ============================================================
+-- Tujuan: menampilkan ringkasan berapa banyak tempat per kategori, rata-rata rating, dll.
+-- ============================================================
+-- SELECT 
+--     kategori.nama_kategori,
+--     COUNT(tempat.id) AS jumlah,
+--     ROUND(AVG(tempat.review_rating), 2) AS rata_rata_rating
+-- FROM kategori
+-- LEFT JOIN tempat ON tempat.kategori_id = kategori.id
+-- GROUP BY kategori.id, kategori.nama_kategori
+-- ORDER BY jumlah DESC;
+-- 
+-- Penjelasan:
+-- - GROUP BY mengelompokkan berdasarkan kategori.
+-- - COUNT, AVG, ROUND adalah fungsi agregasi SQL.
+-- - Hasil query ditampilkan di dashboard admin (grafik batang, dll).
+
+-- ============================================================
+-- 12. TAMBAH TEMPAT BARU (INSERT)
+-- ============================================================
+-- Tujuan: user atau admin menambahkan tempat baru melalui formulir aplikasi.
+-- Data yang diisi: nama, deskripsi, jalan, kecamatan, koordinat, kategori, rating, kontak, foto.
+-- ============================================================
+-- INSERT INTO tempat (
+--     nama_tempat, 
+--     detail_tempat, 
+--     jalan, 
+--     kecamatan_id, 
+--     latitude, 
+--     longitude, 
+--     kategori_id, 
+--     review_rating, 
+--     kontak, 
+--     media, 
+--     user_id,
+--     created_at
+-- ) VALUES (
+--     'Warung Makan Baru',
+--     'Menyediakan masakan Padang enak',
+--     'Jl. Gatot Subroto No.10',
+--     5,  -- ID kecamatan (contoh: Medan Sunggal)
+--     3.589123,
+--     98.674567,
+--     1,  -- ID kategori (1 = Kuliner)
+--     4.5,
+--     '08123456789',
+--     'warung_baru.jpg',
+--     2,  -- ID user yang menambahkan
+--     NOW()
+-- );
+-- 
+-- Penjelasan:
+-- - Aplikasi akan mengirim data ini ke Supabase melalui API.
+-- - Kolom created_at diisi otomatis dengan waktu saat ini.
+
+-- ============================================================
+-- 13. EDIT TEMPAT (UPDATE)
+-- ============================================================
+-- Tujuan: user atau admin mengubah data tempat yang sudah ada.
+-- ============================================================
+-- UPDATE tempat
+-- SET 
+--     nama_tempat = 'Warung Makan Baru (Renovasi)',
+--     review_rating = 4.7,
+--     updated_at = NOW()
+-- WHERE id = 100;
+-- 
+-- Penjelasan:
+-- - WHERE id = ... memastikan hanya satu tempat yang diubah.
+-- - updated_at diisi dengan waktu sekarang.
+
+-- ============================================================
+-- 14. HAPUS TEMPAT (DELETE)
+-- ============================================================
+-- Tujuan: menghapus tempat dari database (hanya admin atau pemilik tempat).
+-- ============================================================
+-- DELETE FROM tempat WHERE id = 100;
+-- 
+-- Penjelasan:
+-- - Hapus secara permanen. Biasanya aplikasi akan meminta konfirmasi dulu.
+
+-- ============================================================
+-- 15. FAVORIT (TAMBAH/ HAPUS)
+-- ============================================================
+-- Tujuan: user dapat menandai tempat favorit. Data favorit disimpan di tabel terpisah.
+-- Catatan: Karena aplikasi DanLens saat ini menggunakan SharedPreferences (lokal),
+--          tidak menggunakan tabel di database. Namun jika ingin sinkron antar perangkat,
+--          bisa dibuat tabel 'favorites' seperti contoh di bawah.
+-- ============================================================
+-- CREATE TABLE IF NOT EXISTS favorites (
+--     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+--     tempat_id INTEGER REFERENCES tempat(id) ON DELETE CASCADE,
+--     created_at TIMESTAMP DEFAULT NOW(),
+--     PRIMARY KEY (user_id, tempat_id)
+-- );
+-- 
+-- -- Tambah favorit
+-- INSERT INTO favorites (user_id, tempat_id) VALUES (2, 5);
+-- 
+-- -- Hapus favorit
+-- DELETE FROM favorites WHERE user_id = 2 AND tempat_id = 5;
+-- 
+-- -- Tampilkan favorit user
+-- SELECT tempat.*, kategori.nama_kategori, kecamatan.nama_kecamatan
+-- FROM favorites
+-- JOIN tempat ON favorites.tempat_id = tempat.id
+-- LEFT JOIN kategori ON tempat.kategori_id = kategori.id
+-- LEFT JOIN kecamatan ON tempat.kecamatan_id = kecamatan.id
+-- WHERE favorites.user_id = 2
+-- ORDER BY favorites.created_at DESC;
+
+-- ============================================================
+-- 16. AUTENTIKASI (LOGIN)
+-- ============================================================
+-- Tujuan: user login dengan email dan password. Aplikasi akan memverifikasi kredensial.
+-- Supabase Auth menyediakan endpoint terpisah, tetapi secara konsep mirip dengan query:
+-- ============================================================
+-- SELECT id, name, email, role, photo
+-- FROM users
+-- WHERE email = 'user@gmail.com' AND password = '123456';
+-- 
+-- Penjelasan:
+-- - Dalam implementasi nyata, password di-hash, tidak disimpan plain text.
+-- - Supabase Auth menggunakan bcrypt dan tabel auth.users terpisah.
+
+-- ============================================================
+-- 17. REGISTRASI USER BARU
+-- ============================================================
+-- INSERT INTO users (name, email, password, role, created_at, updated_at)
+-- VALUES ('Budi', 'budi@gmail.com', 'hashed_password', 'uploader', NOW(), NOW());
+-- 
+-- Penjelasan:
+-- - Role default: 'uploader' (bukan admin).
+-- - Password harus di-hash sebelum disimpan.
+
+-- ============================================================
+-- 18. RIWAYAT DILIHAT (RECENTLY VIEWED)
+-- ============================================================
+-- Tujuan: mencatat tempat mana saja yang baru saja dilihat user (untuk ditampilkan di profil).
+-- Saat ini aplikasi menyimpan di memory (list), tetapi bisa juga menggunakan tabel.
+-- ============================================================
+-- CREATE TABLE recently_viewed (
+--     user_id INTEGER REFERENCES users(id),
+--     tempat_id INTEGER REFERENCES tempat(id),
+--     viewed_at TIMESTAMP DEFAULT NOW(),
+--     PRIMARY KEY (user_id, tempat_id, viewed_at)
+-- );
+-- 
+-- -- Tambah riwayat
+-- INSERT INTO recently_viewed (user_id, tempat_id) VALUES (2, 5);
+-- 
+-- -- Ambil riwayat (10 terakhir)
+-- SELECT tempat.*, kategori.nama_kategori
+-- FROM recently_viewed
+-- JOIN tempat ON recently_viewed.tempat_id = tempat.id
+-- LEFT JOIN kategori ON tempat.kategori_id = kategori.id
+-- WHERE recently_viewed.user_id = 2
+-- ORDER BY recently_viewed.viewed_at DESC
+-- LIMIT 10;
+
+-- ============================================================
+-- PENUTUP
+-- ============================================================
+-- Dengan memahami query-query di atas, orang awam dapat mengetahui bagaimana aplikasi
+-- DanLens berinteraksi dengan database untuk menyediakan fitur-fitur yang ada.
+-- 
+-- Semua query di atas dapat dijalankan langsung di Supabase SQL Editor (beberapa perlu
+-- disesuaikan dengan nilai parameter seperti koordinat GPS user atau kata kunci pencarian).
+-- 
+-- Aplikasi Flutter tidak selalu menjalankan SQL mentah; biasanya menggunakan SDK Supabase
+-- yang mengubah panggilan API menjadi query SQL di belakang layar. Namun logikanya sama.
+-- ============================================================

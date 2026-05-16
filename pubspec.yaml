@@ -1,0 +1,166 @@
+# PUBSPEC.YAML
+# File konfigurasi untuk proyek Flutter DanLens.
+# File ini berisi daftar semua paket (dependencies) yang dibutuhkan aplikasi,
+# pengaturan aset (gambar, font), dan konfigurasi untuk ikon aplikasi serta layar splash.
+# File ini wajib ada dalam setiap proyek Flutter. Sintaks yang digunakan adalah YAML.
+# Setiap baris yang diawali dengan tanda pagar (#) adalah komentar dan tidak dieksekusi.
+
+# Nama aplikasi, harus sama dengan folder proyek.
+name: danlens
+
+# Deskripsi singkat aplikasi.
+description: DanLens - Sistem Informasi GIS Tempat di Medan
+
+# Nomor versi aplikasi. 1.0.0+1 artinya versi 1.0.0 dan build number 1.
+version: 1.0.0+1
+
+# Lingkungan SDK Dart yang diperlukan.
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+# Daftar paket yang diperlukan saat aplikasi berjalan (runtime).
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Paket untuk Supabase (backend database dan autentikasi).
+  supabase_flutter: ^2.3.4
+
+  # Paket untuk manajemen state (mengelola data antar halaman).
+  provider: ^6.1.2
+
+  # Paket untuk Firebase (notifikasi push).
+  firebase_core: ^3.4.1
+  firebase_messaging: ^15.1.0
+
+  # Paket untuk peta interaktif.
+  flutter_map: ^6.1.0
+  latlong2: ^0.9.0
+
+  # Paket untuk mengelompokkan marker pada peta.
+  flutter_map_marker_cluster: ^1.3.1
+
+  # Paket untuk mengakses lokasi GPS pengguna.
+  geolocator: ^11.0.0
+
+  # Paket untuk meminta izin akses (seperti izin lokasi).
+  permission_handler: ^11.3.1
+
+  # Paket untuk menampilkan gambar dari internet dengan cache.
+  cached_network_image: ^3.3.1
+
+  # Paket untuk memilih gambar dari galeri atau kamera.
+  image_picker: ^1.1.2
+
+  # Paket untuk melihat gambar dalam mode fullscreen dengan zoom.
+  photo_view: ^0.14.0
+
+  # Paket untuk membuat carousel (slide gambar) di halaman beranda.
+  carousel_slider: ^5.0.0
+
+  # Paket untuk efek skeleton loading (placeholder animasi saat loading).
+  shimmer: ^3.0.0
+
+  # Paket untuk animasi sederhana pada widget.
+  flutter_animate: ^4.5.0
+
+  # Paket untuk indikator dot pada carousel.
+  smooth_page_indicator: ^1.1.0
+
+  # Paket untuk membuka URL eksternal (seperti Google Maps atau WhatsApp).
+  url_launcher: ^6.3.0
+
+  # Paket untuk menampilkan gambar dalam format SVG.
+  flutter_svg: ^2.0.10+1
+
+  # Paket untuk membuat badge (angka kecil di atas icon).
+  badges: ^3.1.2
+
+  # Paket untuk navigasi antar halaman dengan sistem rute.
+  go_router: ^13.2.0
+
+  # Paket untuk menyimpan data sederhana secara lokal (cache).
+  shared_preferences: ^2.2.3
+
+  # Paket untuk menampilkan notifikasi lokal di perangkat.
+  flutter_local_notifications: ^17.2.2
+
+  # Paket untuk export data ke file PDF.
+  pdf: ^3.11.1
+
+  # Paket untuk export data ke file Excel.
+  excel: ^4.0.2
+
+  # Paket untuk mendapatkan direktori penyimpanan sementara perangkat.
+  path_provider: ^2.1.3
+
+  # Paket untuk berbagi file (share) ke aplikasi lain.
+  share_plus: ^12.0.2
+
+  # Paket untuk memilih file dari penyimpanan perangkat (import data).
+  file_picker: ^11.0.2
+
+  # Paket untuk melakukan request HTTP (seperti panggilan API OSRM).
+  dio: ^5.4.3+1
+
+  # Paket untuk mengecek status koneksi internet (online/offline).
+  connectivity_plus: ^6.0.3
+
+  # Paket utilitas untuk format tanggal, angka, dll.
+  intl: ^0.19.0
+
+  # Paket untuk menghasilkan UUID (identifikasi unik file gambar).
+  uuid: ^4.4.2
+
+  # Paket untuk mencatat log error dengan tampilan yang rapi.
+  logger: ^2.4.0
+
+# Daftar paket yang hanya diperlukan saat pengembangan (testing, build, dll).
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.4
+
+# Bagian konfigurasi khusus Flutter.
+flutter:
+  uses-material-design: true
+
+  # Daftar folder aset (gambar, file statis) yang akan disertakan dalam aplikasi.
+  assets:
+    - assets/images/team/
+
+  # Konfigurasi font custom.
+  fonts:
+    - family: Poppins
+      fonts:
+        - asset: assets/fonts/Poppins-Regular.ttf
+        - asset: assets/fonts/Poppins-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Poppins-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Poppins-Bold.ttf
+          weight: 700
+
+# Konfigurasi untuk mengganti ikon aplikasi (launcher icon) secara otomatis.
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/logo/logo.png"
+  adaptive_icon_background: "#4a7c59"
+  remove_alpha_ios: true
+
+# Konfigurasi untuk layar splash (tampilan awal saat aplikasi dibuka).
+flutter_native_splash:
+  color: "#4a7c59"
+  image: assets/logo/logo_splash.png
+  fullscreen: false
+  android_12:
+    color: "#4a7c59"
+    image: assets/logo/logo_splash.png
+    color_dark: "#2e5240"
+    image_dark: assets/logo/logo_splash.png
+  ios: true
+  ios_content_mode: center
+  web: false
