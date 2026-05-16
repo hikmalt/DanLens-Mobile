@@ -1,4 +1,3 @@
-```
 <div align="center">
   <img src="assets/logo/logo.png" alt="DanLens Logo" width="150" />
   <h1>🌿 DanLens</h1>
@@ -353,4 +352,3 @@ Proyek ini dilisensikan di bawah [MIT License](LICENSE).
 <div align="center">
   <sub>Dibuat dengan ❤️ oleh Tim DanLens • &copy; 2026</sub>
 </div>
-```
